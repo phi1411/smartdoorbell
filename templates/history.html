@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Lịch sử Sự kiện & Nhật ký An ninh · Smart Doorbell AI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <p class="eyebrow">NHẬT KÝ KIỂM TOÁN AN NINH</p>
+    <h1 class="page-title">Lịch sử Sự kiện</h1>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-secondary" id="exportLink" href="/api/events?format=csv" download="doorbell-events.csv">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Xuất file CSV</span>
+    </a>
+  </div>
+</div>
+
+<!-- Khối Bộ lọc Dữ liệu -->
+<section class="card filters-card" aria-label="Bộ lọc sự kiện">
+  <form id="filters" class="filters-form" novalidate>
+    <div class="filter-group">
+      <label for="filterType" class="filter-label">Loại sự kiện</label>
+      <select id="filterType" name="type">
+        <option value="">Tất cả sự kiện</option>
+        <option value="DOORBELL">🔔 Bấm chuông cửa (DOORBELL)</option>
+        <option value="UNKNOWN_LOITERING">⚠️ Người chưa xác định lưu lại thời gian dài</option>
+        <option value="SPOOF_ATTEMPT">🚨 Cảnh báo giả mạo (SPOOF)</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="filterDate" class="filter-label">Lọc theo ngày</label>
+      <input type="date" id="filterDate" name="date">
+    </div>
+
+    <div class="filter-actions">
+      <button type="submit" class="btn btn-primary" id="filterSubmitBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        <span>Áp dụng lọc</span>
+      </button>
+      <button type="button" class="btn btn-secondary" id="filterResetBtn">Đặt lại</button>
+    </div>
+  </form>
+</section>
+
+<!-- Bảng Lịch sử Desktop & Card Mobile -->
+<section class="card" aria-label="Danh sách kết quả lịch sử sự kiện">
+  <div class="table-responsive">
+    <table class="audit-table">
+      <thead>
+        <tr>
+          <th>Thời gian</th>
+          <th>Loại sự kiện</th>
+          <th>Định danh / Đối tượng</th>
+          <th>Độ tin cậy</th>
+          <th>Liveness</th>
+          <th>Telegram</th>
+          <th>Ảnh chụp</th>
+        </tr>
+      </thead>
+      <tbody id="historyRows">
+        <!-- Skeleton loading rows -->
+        <tr class="skeleton-row"><td colspan="7"></td></tr>
+        <tr class="skeleton-row"><td colspan="7"></td></tr>
+        <tr class="skeleton-row"><td colspan="7"></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile Card List View (Tự động hiển thị khi màn hình <= 768px) -->
+  <div class="history-cards-view" id="historyCards"></div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/history.js') }}"></script>
+{% endblock %}
+

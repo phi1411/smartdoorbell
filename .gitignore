@@ -1,0 +1,12 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+data/*.db
+data/*.db-*
+data/events/*
+data/faces/*
+!data/events/.gitkeep
+!data/faces/.gitkeep
+

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a0f18">
+  <title>{% block title %}Smart Doorbell · Hệ thống Chuông cửa AI{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-brand-group">
+        <a class="brand" href="/" aria-label="Smart Doorbell AI Dashboard">
+          <span class="brand-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <circle cx="12" cy="11" r="3"/>
+            </svg>
+          </span>
+          <span class="brand-text">SMART DOORBELL</span>
+          <span class="brand-tag">AI</span>
+        </a>
+      </div>
+
+      <nav class="main-nav" id="mainNav" aria-label="Điều hướng chính">
+        <a href="/" class="nav-item {{ 'active' if request.path == '/' else '' }}" {% if request.path == '/' %}aria-current="page"{% endif %}>
+          <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+          <span>Dashboard</span>
+        </a>
+        <a href="/faces" class="nav-item {{ 'active' if request.path == '/faces' else '' }}" {% if request.path == '/faces' %}aria-current="page"{% endif %}>
+          <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Khuôn mặt</span>
+        </a>
+        <a href="/history" class="nav-item {{ 'active' if request.path == '/history' else '' }}" {% if request.path == '/history' %}aria-current="page"{% endif %}>
+          <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>Lịch sử</span>
+        </a>
+        <a href="/settings" class="nav-item {{ 'active' if request.path == '/settings' else '' }}" {% if request.path == '/settings' %}aria-current="page"{% endif %}>
+          <svg class="nav-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>Cài đặt</span>
+        </a>
+      </nav>
+
+      <div class="topbar-meta">
+        <span class="system-time" id="topClock" title="Thời gian hệ thống">--:--:--</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-container" id="mainContent">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Modal xác nhận Accessible -->
+  <div id="confirmModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="confirmTitle" class="modal-title">Xác nhận thao tác</h3>
+        <button type="button" class="modal-close-btn" id="confirmClose" aria-label="Đóng hộp thoại">&times;</button>
+      </div>
+      <div class="modal-body" id="confirmMessage">
+        Nội dung xác nhận sẽ hiển thị ở đây.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="confirmCancel">Hủy bỏ</button>
+        <button type="button" class="btn btn-danger" id="confirmOk">Xác nhận</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Lightbox xem ảnh sự kiện -->
+  <div id="lightboxModal" class="modal-backdrop lightbox-backdrop" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle" aria-hidden="true">
+    <div class="modal-dialog lightbox-dialog">
+      <div class="modal-header">
+        <div class="lightbox-header-info">
+          <h3 id="lightboxTitle" class="modal-title">Ảnh chụp sự kiện</h3>
+          <span id="lightboxSubtitle" class="lightbox-subtitle text-muted">Chi tiết</span>
+        </div>
+        <button type="button" class="modal-close-btn" id="lightboxClose" aria-label="Đóng xem ảnh">&times;</button>
+      </div>
+      <div class="modal-body lightbox-body">
+        <div class="lightbox-image-box">
+          <img id="lightboxImg" src="" alt="Ảnh chụp camera chuông cửa" class="lightbox-image">
+        </div>
+        <div class="lightbox-meta-panel" id="lightboxMeta">
+          <!-- Metadata render qua JS -->
+        </div>
+      </div>
+      <div class="modal-footer lightbox-footer">
+        <a id="lightboxDownload" href="#" download class="btn btn-secondary" target="_blank" rel="noopener">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Mở ảnh gốc</span>
+        </a>
+        <button type="button" class="btn btn-primary" id="lightboxDone">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script src="{{ url_for('static', filename='js/common.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

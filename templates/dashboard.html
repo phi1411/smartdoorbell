@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Giám sát Chuông cửa Thông minh{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <p class="eyebrow">GIÁM SÁT AN NINH REALTIME</p>
+    <h1 class="page-title">Bảng điều khiển Trung tâm</h1>
+  </div>
+  <div class="page-actions">
+    <span class="system-time font-mono" id="clock" title="Thời gian hiện tại">--:--:--</span>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <!-- Cột Trái: Camera Trực tiếp với HUD An Ninh -->
+  <section class="card camera-card" aria-label="Khung hình camera trực tiếp">
+    <div class="card-head">
+      <div class="card-title-group">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        <h2 class="card-title">Camera trực tiếp</h2>
+      </div>
+      <span id="cameraBadge" class="badge badge-neutral">Đang kết nối…</span>
+    </div>
+
+    <div class="camera-wrap" id="cameraBox">
+      <!-- HUD Corner Brackets -->
+      <div class="camera-hud-bracket hud-tl" aria-hidden="true"></div>
+      <div class="camera-hud-bracket hud-tr" aria-hidden="true"></div>
+      <div class="camera-hud-bracket hud-bl" aria-hidden="true"></div>
+      <div class="camera-hud-bracket hud-br" aria-hidden="true"></div>
+      <div class="camera-scanline" aria-hidden="true"></div>
+
+      <!-- Overlays -->
+      <div class="camera-overlay-top">
+        <span id="overlayCameraStatus" class="camera-status-pill live">
+          <span class="pulse-dot"></span> <span id="overlayCameraText">LIVE</span>
+        </span>
+        <span id="overlayLiveness" class="camera-liveness-pill disabled">LIVENESS: —</span>
+      </div>
+
+      <!-- Offline Fallback -->
+      <div id="cameraOfflineView" class="camera-offline-view">
+        <svg class="camera-offline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l22 22M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34m-7.72-2.06a4 4 0 1 1-5.56-5.56"/></svg>
+        <div class="camera-offline-text">Mất tín hiệu camera webcam</div>
+        <p class="camera-offline-sub" id="cameraOfflineMsg">Đang tự động thử lại... Vui lòng kiểm tra xem ứng dụng khác (Zoom, Teams, Camera) có đang chiếm webcam hay không.</p>
+      </div>
+
+      <img id="cameraStream" src="/api/camera/stream" alt="Webcam stream trực tiếp" class="camera-feed" loading="eager">
+    </div>
+
+    <!-- Thanh thông số nhận diện dưới camera -->
+    <div class="camera-telemetry-strip">
+      <div class="telemetry-item">
+        <span class="telemetry-label">Đối tượng / Nhận diện nhiều người</span>
+        <strong class="telemetry-value" id="currentIdentity">Đang chờ camera…</strong>
+      </div>
+      <div class="telemetry-item">
+        <span class="telemetry-label">Trạng thái Liveness</span>
+        <strong class="telemetry-value" id="livenessStatus">—</strong>
+      </div>
+      <div class="telemetry-item">
+        <span class="telemetry-label">Độ tin cậy nhận diện</span>
+        <strong class="telemetry-value font-mono" id="confidenceScore">—</strong>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cột Phải: Trạng thái Hệ thống & Nút Chuông Cửa -->
+  <aside class="card system-card" aria-label="Bảng điều khiển hệ thống và chuông cửa">
+    <div class="card-head">
+      <div class="card-title-group">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+        <h2 class="card-title">Hệ thống & Cảnh báo</h2>
+      </div>
+    </div>
+
+    <div class="system-status-list">
+      <div class="status-row">
+        <span class="status-label">Tình trạng Camera</span>
+        <span class="status-val" id="cameraStatus"><span class="status-dot"></span> Đang kiểm tra…</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Nhận diện AI (LBPH)</span>
+        <span class="status-val" id="recognitionStatus"><span class="status-dot"></span> Đang tải…</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Thông báo Telegram</span>
+        <span class="status-val" id="telegramStatus"><span class="status-dot"></span> Đang tải…</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Chống giả mạo (Anti-spoof)</span>
+        <span class="status-val" id="antiStatus">—</span>
+      </div>
+      <div class="status-row unknown-alert-control">
+        <span class="status-label">
+          Cảnh báo người chưa xác định
+          <small id="unknownWarningHint">Đang tải trạng thái…</small>
+        </span>
+        <label class="switch" aria-label="Bật hoặc tắt cảnh báo người chưa xác định lưu lại thời gian dài">
+          <input type="checkbox" id="unknownWarningToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Khuôn mặt đã đăng ký</span>
+        <span class="status-val font-mono" id="registeredFacesCount">0 người</span>
+      </div>
+    </div>
+
+    <!-- Thanh theo dõi người lạ (Unknown Tracker) -->
+    <div class="unknown-tracker-card" id="unknownTrackerBox">
+      <div class="unknown-tracker-header">
+        <span class="status-label">Người chưa xác định lưu lại thời gian dài</span>
+        <span class="unknown-state-badge" id="unknownBadge">IDLE</span>
+      </div>
+      <div class="unknown-progress-wrap" aria-hidden="true">
+        <div class="unknown-progress-bar" id="unknownProgressBar"></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.75rem; color: var(--text-tertiary);">
+        <span>Thời gian lưu lại:</span>
+        <span class="font-mono text-muted" id="unknownElapsedText">0.0s / 30.0s</span>
+      </div>
+    </div>
+
+    <!-- Nút Chuông Cửa (Doorbell Primary Action) -->
+    <div class="doorbell-action-wrap">
+      <button id="bell" class="bell-button" type="button" aria-label="Bấm chuông cửa">
+        <span class="bell-icon" aria-hidden="true">🔔</span>
+        <span id="bellText">BẤM CHUÔNG CỬA</span>
+      </button>
+      <p id="bellHint" class="bell-hint">Sẵn sàng nhận khách</p>
+    </div>
+  </aside>
+</div>
+
+<!-- Khối Sự Kiện Gần Đây -->
+<section class="card recent-events-card" aria-label="Lịch sử sự kiện chuông cửa gần đây">
+  <div class="card-head">
+    <div class="card-title-group">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <h2 class="card-title">Sự kiện gần đây</h2>
+    </div>
+    <a href="/history" class="card-head-link">Xem tất cả lịch sử →</a>
+  </div>
+  <div id="events" class="event-list" role="feed" aria-busy="true">
+    <!-- Skeleton loader ban đầu -->
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}Cài đặt Hệ thống · Smart Doorbell AI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <p class="eyebrow">ĐIỀU KHIỂN & THÔNG SỐ RUNTIME</p>
+    <h1 class="page-title">Cấu hình Hệ thống</h1>
+  </div>
+</div>
+
+<form id="settingsForm" novalidate>
+  <div class="settings-layout">
+    <!-- Nhóm 1: Chuông cửa -->
+    <section class="card" aria-label="Cài đặt chuông cửa">
+      <div class="card-head">
+        <div class="card-title-group">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <h2 class="card-title">Chuông cửa (Doorbell)</h2>
+        </div>
+      </div>
+      <div class="settings-card-body">
+        <div class="setting-item">
+          <div class="setting-header">
+            <label for="doorbell_cooldown_seconds" class="setting-label">Thời gian giãn cách bấm chuông</label>
+          </div>
+          <div class="input-with-unit">
+            <input type="number" id="doorbell_cooldown_seconds" name="doorbell_cooldown_seconds" min="0.5" max="300" step="0.5" required>
+            <span class="input-unit">giây</span>
+          </div>
+          <p class="setting-helper">Thời gian chống spam giữa 2 lần bấm chuông liên tiếp. Các lần bấm trong khoảng thời gian này sẽ kích hoạt cooldown 429.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Nhóm 2: Phát hiện người lạ -->
+    <section class="card" aria-label="Cài đặt phát hiện người lạ">
+      <div class="card-head">
+        <div class="card-title-group">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-amber"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <h2 class="card-title">Phát hiện Người lạ (Unknown Detection)</h2>
+        </div>
+      </div>
+      <div class="settings-card-body">
+        <div class="setting-item toggle-row">
+          <div>
+            <span class="setting-label">Cảnh báo người chưa xác định lưu lại thời gian dài</span>
+            <p class="setting-helper">Chỉ theo dõi và gửi Telegram khi công tắc này được bật</p>
+          </div>
+          <label class="switch" aria-label="Bật/tắt cảnh báo người lạ">
+            <input type="checkbox" name="unknown_warning_enabled">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-header">
+            <label for="unknown_alert_seconds" class="setting-label">Thời gian kích hoạt cảnh báo</label>
+          </div>
+          <div class="input-with-unit">
+            <input type="number" id="unknown_alert_seconds" name="unknown_alert_seconds" min="1" max="3600" step="1" required>
+            <span class="input-unit">giây</span>
+          </div>
+          <p class="setting-helper">Thời gian người lạ xuất hiện liên tục trước webcam trước khi hệ thống tạo cảnh báo UNKNOWN_LOITERING.</p>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-header">
+            <label for="unknown_track_lost_tolerance_seconds" class="setting-label">Dung sai mất dấu khuôn mặt</label>
+          </div>
+          <div class="input-with-unit">
+            <input type="number" id="unknown_track_lost_tolerance_seconds" name="unknown_track_lost_tolerance_seconds" min="0.1" max="30" step="0.1" required>
+            <span class="input-unit">giây</span>
+          </div>
+          <p class="setting-helper">Cho phép đối tượng tạm thời quay mặt hoặc khuất hình trong khoảng thời gian này mà không bị reset bộ đếm.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Nhóm 3: Nhận diện AI & Computer Vision -->
+    <section class="card" aria-label="Cài đặt AI và Thị giác máy tính">
+      <div class="card-head">
+        <div class="card-title-group">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <h2 class="card-title">Thị giác máy tính & AI</h2>
+        </div>
+      </div>
+      <div class="settings-card-body">
+        <div class="setting-item toggle-row">
+          <div>
+            <span class="setting-label">Chống giả mạo (Anti-spoof / Liveness)</span>
+            <p class="setting-helper">Kiểm tra dấu hiệu người thật để hạn chế giả mạo bằng ảnh in hoặc video</p>
+          </div>
+          <label class="switch" aria-label="Bật/tắt kiểm tra liveness">
+            <input type="checkbox" name="anti_spoof_enabled">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-header">
+            <label for="face_match_threshold" class="setting-label">Ngưỡng khoảng cách LBPH (Threshold)</label>
+          </div>
+          <input type="number" id="face_match_threshold" name="face_match_threshold" min="1" max="200" step="1" required>
+          <div class="setting-callout">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div>
+              <strong>Nguyên tắc khoảng cách LBPH:</strong> Giá trị càng thấp thì nhận diện càng nghiêm ngặt; giá trị càng cao thì dễ nhận hơn nhưng dễ nhầm. Khuyến nghị chuẩn: <strong>45 – 75</strong>.
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-header">
+            <label for="face_min_size" class="setting-label">Kích thước khuôn mặt tối thiểu</label>
+          </div>
+          <div class="input-with-unit">
+            <input type="number" id="face_min_size" name="face_min_size" min="30" max="500" step="5" required>
+            <span class="input-unit">pixels</span>
+          </div>
+          <p class="setting-helper">Bỏ qua các khuôn mặt nhỏ hơn kích thước này để loại bỏ nhiễu nền ở xa.</p>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-header">
+            <label for="recognition_every_n_frames" class="setting-label">Tần suất phân tích frame</label>
+          </div>
+          <div class="input-with-unit">
+            <input type="number" id="recognition_every_n_frames" name="recognition_every_n_frames" min="1" max="60" step="1" required>
+            <span class="input-unit">frames</span>
+          </div>
+          <p class="setting-helper">Chạy nhận diện sau mỗi N frame để giảm tải CPU cho máy tính khi demo.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Nhóm 4: Lưu trữ & Telegram -->
+    <section class="card" aria-label="Cài đặt lưu trữ và Telegram">
+      <div class="card-head">
+        <div class="card-title-group">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <h2 class="card-title">Tích hợp & Lưu trữ</h2>
+        </div>
+      </div>
+      <div class="settings-card-body">
+        <div class="setting-item toggle-row">
+          <div>
+            <span class="setting-label">Gửi thông báo & ảnh qua Telegram</span>
+            <p class="setting-helper">Gửi tin nhắn cảnh báo tức thì kèm ảnh chụp đến điện thoại chủ nhà. Token và Chat ID được lưu an toàn trong file <code>.env</code>.</p>
+          </div>
+          <label class="switch" aria-label="Bật/tắt gửi Telegram">
+            <input type="checkbox" name="telegram_enabled">
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-item toggle-row">
+          <div>
+            <span class="setting-label">Lưu ảnh sự kiện vào ổ đĩa</span>
+            <p class="setting-helper">Tự động lưu file JPEG vào thư mục <code>data/events</code> để phục vụ tra cứu lịch sử.</p>
+          </div>
+          <label class="switch" aria-label="Bật/tắt lưu ảnh sự kiện">
+            <input type="checkbox" name="save_event_images">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Thanh tác vụ lưu thay đổi -->
+  <div class="settings-actions-bar">
+    <div class="dirty-indicator" id="dirtyIndicator">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>Có thay đổi chưa lưu</span>
+    </div>
+    <div style="display: flex; gap: 12px;">
+      <button type="button" class="btn btn-secondary" id="cancelSettingsBtn">Hủy thay đổi</button>
+      <button type="submit" class="btn btn-primary" id="saveSettingsBtn">Lưu cài đặt</button>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+{% endblock %}
