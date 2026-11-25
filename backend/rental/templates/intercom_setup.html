@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='intercom.css') }}">
+<h1>Đàm thoại cửa chung</h1>
+{% for category, message in get_flashed_messages(with_categories=true) %}
+<p class="notice {{ category }}" role="status">{{ message }}</p>
+{% endfor %}
+{% include "intercom_incoming_panel.html" %}
+{% if code %}
+<section class="panel intercom-panel">
+  <h2>Mã ghép điện thoại{% if device_name %} · {{ device_name }}{% endif %}</h2>
+  <output class="intercom-code" aria-label="Mã ghép điện thoại">{{ code }}</output>
+  <p>Mã dùng một lần và có hiệu lực trong 5 phút.</p>
+  <p>Mở <a href="{{ url_for('intercom.station') }}">trang điện thoại ở cửa</a> trên máy đặt tại cửa, nhập mã rồi bấm <strong>Bật mic và loa</strong>.</p>
+</section>
+{% endif %}
+<section class="panel">
+  <div class="heading"><h2>Thiết bị ở cửa</h2></div>
+  {% if devices %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">Dãy trọ và thiết bị</th><th scope="col">Điện thoại</th>{% if g.actor.role == 'owner' %}<th scope="col">Thao tác</th>{% endif %}</tr></thead>
+      <tbody>
+      {% for device in devices %}<tr>
+        <td>{{ device.name }} · Cửa chung <small>{{ device.id }}</small></td>
+        <td>{{ 'Đã ghép' if device.paired else 'Chưa ghép' }}</td>
+        {% if g.actor.role == 'owner' %}
+        <td class="intercom-device-actions">
+          <form method="post" action="{{ url_for('intercom.pair', device=device.id) }}">
+            <input type="hidden" name="csrf" value="{{ session.csrf }}">
+            <button class="quiet">{{ 'Tạo mã ghép lại' if device.paired else 'Tạo mã ghép' }}</button>
+          </form>
+          {% if device.paired %}
+          <form method="post" action="{{ url_for('intercom.revoke', device=device.id) }}">
+            <input type="hidden" name="csrf" value="{{ session.csrf }}">
+            <button class="quiet">Gỡ điện thoại</button>
+          </form>
+          {% endif %}
+        </td>
+        {% endif %}
+      </tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty muted">Chưa có chuông cửa chung được đăng ký.</p>
+  {% endif %}
+</section>
+{% endblock %}

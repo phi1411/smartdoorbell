@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% from "operations_shared.html" import token, notices_for_page with context %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='operations.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='tenant_repair.css') }}">
+<h1>Báo sửa chữa với Hermes</h1>
+{{ notices_for_page() }}
+<p class="ops-context">{{ resident.house_name }} · Phòng {{ resident.code }} · <a href="{{ url_for('operations.index', _anchor='maintenance') }}">Yêu cầu bảo trì của tôi</a></p>
+<section class="panel" id="repair-assistant"
+         data-transcribe="{{ url_for('tenant_repair.transcribe') }}"
+         data-draft="{{ url_for('tenant_repair.draft') }}"
+         data-audio-limit="{{ recording_limit }}"
+         data-csrf="{{ session.csrf }}">
+  <form class="ops-form stack" id="repair-composer">
+    <label>Mô tả sự cố
+      <textarea id="repair-issue" rows="4" maxlength="1500"
+                placeholder="Vòi nước trong nhà vệ sinh bị rò liên tục" required></textarea>
+    </label>
+    <div class="face-camera-actions">
+      <button type="button" id="repair-record" class="quiet" hidden>Thu âm</button>
+      <button type="submit" id="repair-prepare">Tạo bản nháp</button>
+    </div>
+    <p id="repair-progress" class="ops-context" role="status">Bạn có thể nhập mô tả hoặc gửi bản thu âm để Hermes soạn phiếu.</p>
+  </form>
+  <form class="ops-form stack" id="repair-confirm" method="post" action="{{ url_for('tenant_repair.confirm') }}" hidden>
+    {{ token() }}
+    <input id="repair-confirmation" name="confirmation" type="hidden">
+    <h2>Bản nháp phiếu bảo trì</h2>
+    <div class="ops-grid">
+      <label>Loại sự cố <select id="repair-category" name="category" required>
+        {% for value, label in categories.items() %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+      </select></label>
+      <label>Tiêu đề <input id="repair-subject" name="subject" maxlength="100" required></label>
+    </div>
+    <label>Mô tả <textarea id="repair-description" name="description" rows="4" maxlength="1500" required></textarea></label>
+    <button type="submit">Xác nhận gửi phiếu</button>
+  </form>
+</section>
+<noscript><style>#repair-assistant { display: none; }</style><p>Hãy bật JavaScript hoặc gửi yêu cầu trong mục Bảo trì.</p></noscript>
+<script defer src="{{ url_for('static', filename='tenant_repair.js') }}"></script>
+{% endblock %}

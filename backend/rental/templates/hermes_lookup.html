@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block page_styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='hermes_chat.css') }}">
+{% endblock %}
+{% block content %}
+{% set tenant = role == 'tenant' %}
+{% set prompts = [
+  ('Hóa đơn tháng này', 'Tháng này mình còn phải đóng bao nhiêu?'),
+  ('Hợp đồng của tôi', 'Hợp đồng của mình hết hạn khi nào?'),
+  ('Tiến độ bảo trì', 'Yêu cầu sửa chữa của mình đến đâu rồi?')
+] if tenant else [
+  ('Phòng còn trống', 'Dãy A còn phòng nào trống?'),
+  ('Hóa đơn theo phòng', 'Phòng 02 tháng này còn bao nhiêu tiền?'),
+  ('Theo dõi bảo trì', 'Tiến độ sửa chữa của Dãy A thế nào?')
+] %}
+<div class="hermes-page" data-hermes-chat>
+  <header class="hermes-header">
+    <span class="hermes-mark" aria-hidden="true">H</span>
+    <div>
+      <h1>Hỏi Hermes</h1>
+      <p>Trợ lý nhà trọ</p>
+    </div>
+  </header>
+
+  <div class="hermes-workspace">
+    <aside class="hermes-topics" data-hermes-topics hidden aria-labelledby="hermes-topics-title">
+      <h2 id="hermes-topics-title">Hỏi nhanh</h2>
+      {% for label, prompt in prompts %}
+      <button type="button" data-hermes-prompt="{{ prompt }}">
+        <span>{{ label }}</span><span aria-hidden="true">↗</span>
+      </button>
+      {% endfor %}
+    </aside>
+
+    <section class="hermes-conversation" aria-label="Trò chuyện với Hermes">
+      <div class="hermes-transcript" role="log" aria-label="Tin nhắn" tabindex="0" data-hermes-transcript>
+        <div class="hermes-turn">
+          <span class="hermes-mark hermes-mark-small" aria-hidden="true">H</span>
+          <div class="hermes-message">
+            <span class="hermes-author">Hermes</span>
+            <p>Chào bạn! {{ 'Bạn muốn xem hóa đơn, hợp đồng hay tiến độ sửa chữa của phòng mình?' if tenant else 'Bạn cần tra phòng trống, hóa đơn, hợp đồng hay tiến độ sửa chữa?' }}</p>
+          </div>
+        </div>
+        {% if question %}
+        <div class="hermes-turn hermes-turn-user">
+          <div class="hermes-message">
+            <span class="hermes-author">Bạn</span>
+            <p>{{ question }}</p>
+          </div>
+        </div>
+        {% endif %}
+        {% if reply %}
+        <div class="hermes-turn">
+          <span class="hermes-mark hermes-mark-small" aria-hidden="true">H</span>
+          <div class="hermes-message">
+            <span class="hermes-author">Hermes</span>
+            <p>{{ reply }}</p>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="hermes-composer-area">
+        <p class="hermes-feedback" role="status" data-hermes-feedback{% if not error %} hidden{% endif %}>{{ error or '' }}</p>
+        <form class="hermes-composer" method="post" action="{{ url_for('hermes_lookup.index') }}" data-hermes-form>
+          <input type="hidden" name="csrf" value="{{ session.csrf }}">
+          <label class="hermes-sr-only" for="hermes-question">Câu hỏi của bạn</label>
+          <textarea id="hermes-question" name="question" rows="1" maxlength="{{ question_limit }}" required
+            placeholder="Nhập câu hỏi của bạn…"></textarea>
+          <button type="submit">Gửi <span aria-hidden="true">↑</span></button>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>
+<script src="{{ url_for('static', filename='hermes_chat.js') }}" defer></script>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<p><a href="{{ url_for('dashboard', _anchor='rooms') }}">Quay về phòng trọ</a></p>
+<h1>Mẫu khuôn mặt</h1>
+<p><strong>{{ resident.name }}</strong> · {{ resident.house }} · Phòng {{ resident.code }}</p>
+{% for category, message in get_flashed_messages(with_categories=true) %}
+  <p class="notice {{ category }}" role="status">{{ message }}</p>
+{% endfor %}
+<section class="panel">
+  <div class="heading"><h2>Thêm ảnh</h2></div>
+  {% if configured and samples|length < max_samples %}
+    <div class="forms"><form class="stack" id="face-sample-form" method="post" enctype="multipart/form-data">
+      <input type="hidden" name="csrf" value="{{ session.csrf }}">
+      <input type="hidden" name="action" value="enroll">
+      <label>Ảnh rõ mặt, một người, tối đa 8 MB
+        <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required>
+      </label>
+      <button type="button" class="quiet" id="face-camera-open" hidden>Chụp bằng camera</button>
+      <div class="stack" id="face-camera-controls" hidden>
+        <video class="face-sample-preview" id="face-camera-video" aria-label="Camera xem trước" autoplay muted playsinline hidden></video>
+        <div class="face-camera-actions">
+          <button type="button" id="face-camera-capture" disabled>Chụp ảnh</button>
+          <button type="button" class="quiet" id="face-camera-close">Tắt camera</button>
+        </div>
+      </div>
+      <img class="face-sample-preview" id="face-camera-preview" alt="Ảnh mẫu vừa chụp" hidden>
+      <p class="muted face-camera-status" id="face-camera-status" role="status" hidden></p>
+      <button type="submit">Đăng ký mẫu</button>
+    </form></div>
+    <script defer src="{{ url_for('static', filename='face_samples.js') }}"></script>
+  {% elif not configured %}
+    <p class="muted empty">Máy chủ chưa kết nối dịch vụ nhận diện.</p>
+  {% else %}
+    <p class="muted empty">Đã đủ {{ max_samples }} mẫu. Xóa một mẫu để tải ảnh khác.</p>
+  {% endif %}
+</section>
+<section class="panel">
+  <div class="heading"><h2>Mẫu đã đăng ký</h2></div>
+  {% if samples %}
+  <table>
+    <thead><tr><th scope="col">Mẫu</th><th scope="col">Ngày thêm (UTC)</th><th scope="col">Thao tác</th></tr></thead>
+    <tbody>{% for sample in samples %}<tr>
+      <td>Mẫu {{ loop.index }}</td><td>{{ sample.created_at }}</td>
+      <td><form method="post">
+        <input type="hidden" name="csrf" value="{{ session.csrf }}">
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="sample_id" value="{{ sample.id }}">
+        <button class="quiet" aria-label="Xóa mẫu {{ loop.index }}">Xóa mẫu</button>
+      </form></td>
+    </tr>{% endfor %}</tbody>
+  </table>
+  {% else %}<p class="muted empty">Chưa có mẫu khuôn mặt.</p>{% endif %}
+</section>
+{% endblock %}

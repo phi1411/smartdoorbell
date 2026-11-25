@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel device-key">
+  <h1>Mã mời đăng ký</h1>
+  <p><strong>{{ resident.name }}</strong> · Phòng {{ resident.code }}</p>
+  <label>Mã mời <input value="{{ code }}" readonly></label>
+  <p>Mã dùng một lần trong 24 giờ. Gửi riêng mã này cho người thuê để họ nhập trên trang đăng ký. Mỗi lần cấp mã mới, mã trước đó hết hiệu lực.</p>
+  <a href="{{ url_for('accounts.index') }}">Quay lại tài khoản</a>
+</section>
+{% endblock %}

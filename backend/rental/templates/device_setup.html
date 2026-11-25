@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Đã đăng ký chuông cửa chung</h1>
+<section class="panel device-key">
+  <p>Mã thiết bị <strong>{{ device_id }}</strong></p>
+  <label>Khóa thiết bị, hiển thị một lần
+    <input value="{{ token }}" readonly autocomplete="off" spellcheck="false">
+  </label>
+  <p>Lưu khóa này vào cấu hình riêng của ESP32-CAM trước khi rời trang.</p>
+  <a href="{{ url_for('dashboard') }}">Về bảng quản lý</a>
+</section>
+{% endblock %}

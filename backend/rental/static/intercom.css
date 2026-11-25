@@ -1,0 +1,146 @@
+.intercom-panel {
+  max-width: 660px;
+  padding: clamp(16px, 4vw, 25px);
+}
+
+.intercom-panel p {
+  line-height: 1.5;
+}
+
+.intercom-panel [hidden] {
+  display: none !important;
+}
+
+.intercom-panel button {
+  min-height: 44px;
+}
+
+.intercom-panel button:disabled {
+  opacity: .56;
+  cursor: default;
+  filter: none;
+}
+
+.intercom-state {
+  margin: 15px 0;
+  padding: 12px 15px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f4f8f5;
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+.intercom-state[data-state="ringing"] {
+  color: #70441a;
+  background: #fff8e8;
+  border-color: #e6d6aa;
+}
+
+.intercom-state[data-state="active"] {
+  color: var(--green);
+  background: #e9f1ec;
+}
+
+.intercom-state[data-state="assistant"] {
+  color: #1c4e6b;
+  background: #eaf4fa;
+  border-color: #b7d7ea;
+}
+
+.intercom-assistant {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border: 1px solid #b7d7ea;
+  border-radius: 6px;
+  background: #f6fbfe;
+}
+
+.intercom-assistant-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.assistant-log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.assistant-turn {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid var(--line);
+  font-size: 0.95rem;
+}
+
+.assistant-turn[data-speaker="hermes"] {
+  background: #e9f3fa;
+  border-color: #c5dff0;
+}
+
+.assistant-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.assistant-form input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.intercom-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.intercom-controls [aria-pressed="true"] {
+  background: #8c2c2c;
+  border-color: #8c2c2c;
+}
+
+.intercom-feedback {
+  min-height: 1.5em;
+}
+
+.intercom-end {
+  padding-top: 14px;
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.intercom-end form {
+  margin-top: 10px;
+}
+
+.intercom-code {
+  display: inline-block;
+  margin: 12px 0 0;
+  font: 650 clamp(1.35rem, 6vw, 2rem) ui-monospace, monospace;
+  letter-spacing: .09em;
+  overflow-wrap: anywhere;
+}
+
+.intercom-device-actions form {
+  margin: 4px 0;
+}
+
+.intercom-panel input[name="code"] {
+  text-transform: uppercase;
+}
+
+@media (max-width: 430px) {
+  .intercom-controls button {
+    flex: 1 1 145px;
+  }
+}

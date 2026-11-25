@@ -1,0 +1,154 @@
+.hermes-page {
+  --hermes-ink: #15382e;
+  --hermes-line: #dce7e0;
+  --hermes-wash: #eef5f0;
+  max-width: 1040px;
+  margin-inline: auto;
+}
+
+.hermes-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-block: 5px 24px;
+}
+
+.hermes-mark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: #1c5442;
+  color: #fff;
+  font-family: Georgia, serif;
+  font-size: 1.7rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.hermes-header h1 { margin: 0; line-height: 1.12; letter-spacing: -.035em; }
+.hermes-header p { margin: 5px 0 0; color: var(--muted); font-size: .88rem; }
+
+.hermes-workspace {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  min-height: 480px;
+  overflow: hidden;
+  border: 1px solid var(--hermes-line);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 13px 40px rgb(24 59 46 / 7%);
+}
+
+.hermes-topics {
+  padding: 24px 15px;
+  background: #edf4ef;
+  border-inline-end: 1px solid var(--hermes-line);
+}
+
+.hermes-topics h2 {
+  margin: 0 8px 12px;
+  color: var(--muted);
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.hermes-topics button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-block-end: 5px;
+  min-height: 43px;
+  text-align: start;
+  font-size: .91rem;
+  color: var(--hermes-ink);
+  background: transparent;
+  border-color: transparent;
+  border-radius: 9px;
+}
+
+.hermes-topics button:hover { background: #fff; border-color: var(--hermes-line); filter: none; }
+.hermes-topics button span:last-child { color: #386855; }
+.hermes-topics[hidden] + .hermes-conversation { grid-column: 1 / -1; }
+.hermes-conversation { display: flex; min-width: 0; flex-direction: column; }
+.hermes-transcript {
+  flex: 1 1 auto;
+  min-height: 245px;
+  height: clamp(300px, 55vh, 590px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(18px, 4vw, 34px);
+}
+
+.hermes-turn { display: flex; gap: 10px; width: 100%; margin-block-end: 18px; align-items: flex-start; }
+.hermes-turn-user { justify-content: end; }
+.hermes-mark-small { width: 31px; height: 31px; font-size: .96rem; border-radius: 10px; }
+.hermes-message {
+  max-width: min(100% - 41px, 61ch);
+  min-width: 0;
+  padding: 11px 15px 13px;
+  border: 1px solid #e3ece5;
+  border-radius: 4px 15px 15px;
+  background: var(--hermes-wash);
+  color: var(--hermes-ink);
+}
+
+.hermes-author { display: block; margin-block-end: 4px; font-size: .73rem; font-weight: 750; }
+.hermes-message p { margin: 0; line-height: 1.55; overflow-wrap: anywhere; white-space: pre-wrap; }
+.hermes-turn-user .hermes-message { background: #205444; color: white; border-color: #205444; border-radius: 15px 4px 15px 15px; }
+.hermes-turn-pending .hermes-message { color: var(--muted); }
+
+.hermes-composer-area {
+  border-block-start: 1px solid var(--hermes-line);
+  padding: 14px clamp(14px, 3vw, 24px) 17px;
+  background: #fff;
+}
+
+.hermes-composer {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  padding: 6px;
+  border: 1px solid #c3d5ca;
+  border-radius: 13px;
+  background: #f8fbf9;
+}
+
+.hermes-composer:focus-within { border-color: #538570; }
+.hermes-composer textarea {
+  flex: 1 1 auto;
+  resize: none;
+  min-width: 0;
+  min-height: 43px;
+  max-height: 136px;
+  padding: 10px 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: 1.4;
+}
+
+.hermes-composer textarea:focus-visible { outline: none; }
+.hermes-composer button { min-height: 43px; padding-inline: 14px; border-radius: 9px; white-space: nowrap; }
+.hermes-composer button:disabled { opacity: .62; cursor: wait; }
+.hermes-feedback { margin: 0 0 9px; color: #8b3923; font-size: .88rem; }
+.hermes-page :is(button, [tabindex]):focus-visible { outline: 2px solid #40795e; outline-offset: 3px; }
+.hermes-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+@media (max-width: 690px) {
+  .hermes-header { gap: 12px; margin-block: 0 16px; }
+  .hermes-header .hermes-mark { width: 42px; height: 42px; border-radius: 12px; font-size: 1.35rem; }
+  .hermes-workspace { grid-template-columns: 1fr; min-height: 0; border-radius: 15px; }
+  .hermes-topics { display: flex; flex-wrap: wrap; gap: 5px; padding: 10px 12px; border-inline-end: 0; border-block-end: 1px solid var(--hermes-line); }
+  .hermes-topics[hidden] { display: none; }
+  .hermes-topics h2 { width: 100%; margin: 0 0 2px; }
+  .hermes-topics button { width: auto; min-height: 32px; margin: 0; padding: 4px 8px; background: #fff; border-color: var(--hermes-line); font-size: .78rem; }
+  .hermes-topics button span:last-child { display: none; }
+  .hermes-transcript { height: clamp(245px, 47dvh, 530px); }
+  .hermes-message { padding: 9px 12px 11px; }
+}

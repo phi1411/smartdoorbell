@@ -1,0 +1,20 @@
+{% macro token() %}<input type="hidden" name="csrf" value="{{ session.csrf }}">{% endmacro %}
+
+{% macro notices_for_page() %}
+  {% for category, message in get_flashed_messages(with_categories=true) %}
+    <p class="notice {{ category }}" role="status">{{ message }}</p>
+  {% endfor %}
+{% endmacro %}
+
+{% macro lease_summary(lease) %}
+  <dl class="ops-facts">
+    <div><dt>Mã hợp đồng</dt><dd>{{ lease.reference }}</dd></div>
+    <div><dt>Ngày bắt đầu</dt><dd>{{ lease.starts_on }}</dd></div>
+    <div><dt>Ngày kết thúc</dt><dd>{{ lease.ends_on or 'Chưa xác định' }}</dd></div>
+    <div><dt>Tiền thuê hằng tháng</dt><dd>{{ lease.rent_vnd|rental_money }}</dd></div>
+    <div><dt>Tiền cọc</dt><dd>{{ lease.deposit_vnd|rental_money }}</dd></div>
+    <div><dt>Đơn giá điện (kWh)</dt><dd>{{ lease.electricity_rate|rental_money }}</dd></div>
+    <div><dt>Đơn giá nước (m³)</dt><dd>{{ lease.water_rate|rental_money }}</dd></div>
+  </dl>
+  {% if lease.notes %}<p class="ops-note ops-preline">{{ lease.notes }}</p>{% endif %}
+{% endmacro %}

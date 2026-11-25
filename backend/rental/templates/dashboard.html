@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% macro form_token() %}<input type="hidden" name="csrf" value="{{ session.csrf }}">{% endmacro %}
+{% set state_labels = {'queued':'Chờ xử lý', 'processing':'Đang phân tích', 'sending':'Đang gửi', 'sending_before_description':'Đang gửi', 'awaiting_description':'Chờ mô tả ảnh', 'describing':'Đang mô tả ảnh', 'done':'Đã xử lý', 'attention':'Cần kiểm tra'} %}
+{% set notify_labels = {'pending':'Chờ xử lý', 'sending':'Đang gửi', 'sent':'Đã gửi', 'failed':'Gửi thất bại', 'not_configured':'Chưa cấu hình', 'delivery_unknown':'Chưa xác nhận', 'recipient_changed':'Nơi nhận đã đổi'} %}
+{% set ai_labels = {'pending':'Chờ phân tích', 'failed':'Phân tích thất bại', 'not_configured':'Chưa cấu hình Hermes'} %}
+{% block content %}
+<h1>{{ 'Tổng quan Dãy A' if g.house_a_id else 'Tổng quan nhà trọ' }}</h1>
+{% for category, message in get_flashed_messages(with_categories=true) %}
+  <p class="notice {{ category }}" role="status">{{ message }}</p>
+{% endfor %}
+{% if intercom_configured %}
+{% include "intercom_incoming_panel.html" %}
+{% endif %}
+<dl class="summary">
+  {% if g.house_a_id %}
+  <div><dt>Phòng đang có người thuê</dt><dd>{{ occupants|map(attribute='room_id')|unique|list|length }}</dd></div>
+  {% else %}
+  <div><dt>Dãy trọ</dt><dd>{{ houses|length }}</dd></div>
+  {% endif %}
+  <div><dt>Phòng</dt><dd>{{ rooms|length }}</dd></div>
+  <div><dt>Người đang thuê</dt><dd>{{ occupants|length }}</dd></div>
+  <div><dt>Thiết bị</dt><dd>{{ devices|length }}</dd></div>
+</dl>
+
+<section class="panel" id="rooms">
+  <div class="heading"><h2>Phòng trọ</h2></div>
+  <div class="forms">
+    {% if g.actor.role == 'owner' and not g.house_a_id %}
+    <form action="{{ url_for('manage', action='house') }}" method="post" class="stack">
+      {{ form_token() }}<label>Tên dãy trọ <input name="name" required maxlength="100"></label>
+      <button>Thêm dãy trọ</button>
+    </form>
+    {% endif %}
+    {% if houses %}
+    <form action="{{ url_for('manage', action='room') }}" method="post" class="stack">
+      {{ form_token() }}{% if not g.house_a_id %}<label>Dãy trọ <select name="house_id" required>
+        {% for h in houses %}<option value="{{ h.id }}">{{ h.name }}</option>{% endfor %}
+      </select></label>{% endif %}
+      <label>Mã phòng <input name="code" maxlength="32" required></label>
+      <button>Thêm phòng</button>
+    </form>
+    {% endif %}
+    {% if rooms %}
+    <form action="{{ url_for('manage', action='stay') }}" method="post" class="stack">
+      {{ form_token() }}<label>Phòng <select name="room_id" required>
+        {% for r in rooms %}<option value="{{ r.id }}">{% if not g.house_a_id %}{{ r.name }} · {% endif %}{{ r.code }}</option>{% endfor %}
+      </select></label>
+      <label>Tên người thuê <input name="name" maxlength="100" required></label>
+      <button>Nhận phòng</button>
+    </form>
+    {% endif %}
+  </div>
+  {% if rooms %}
+  <div class="table-wrap"><table>
+    <thead><tr>{% if not g.house_a_id %}<th scope="col">Dãy trọ</th>{% endif %}<th scope="col">Phòng</th><th scope="col">Người đang thuê</th><th scope="col">Thao tác</th></tr></thead>
+    <tbody>{% for room in rooms %}<tr>
+      {% if not g.house_a_id %}<td>{{ room.name }}</td>{% endif %}<td><strong>{{ room.code }}</strong></td>
+      <td>{% for resident in occupants if resident.room_id == room.id %}
+        <div class="resident">
+          <span>{{ resident.name }}<small><a href="{{ url_for('face_samples', stay_id=resident.id) }}">Mẫu khuôn mặt</a></small></span>
+          <a href="{{ url_for('checkout_preview', stay_id=resident.id) }}" aria-label="Trả phòng cho {{ resident.name }}">Trả phòng</a>
+        </div>
+      {% else %}<span class="muted">Phòng trống</span>{% endfor %}</td>
+      <td><details><summary>Chỉnh sửa</summary>
+        <form action="{{ url_for('manage', action='rename-room') }}" method="post" class="stack compact">
+          {{ form_token() }}<input type="hidden" name="room_id" value="{{ room.id }}">
+          <label>Mã phòng <input name="code" value="{{ room.code }}" maxlength="32" required></label><button class="quiet">Lưu mã phòng</button>
+        </form>
+        {% for resident in occupants if resident.room_id == room.id %}
+        <form action="{{ url_for('manage', action='rename-resident') }}" method="post" class="stack compact">
+          {{ form_token() }}<input type="hidden" name="stay_id" value="{{ resident.id }}">
+          <label>Tên người thuê <input name="name" value="{{ resident.name }}" maxlength="100" required></label><button class="quiet">Lưu tên</button>
+        </form>
+        {% endfor %}
+      </details></td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="muted empty">Chưa có phòng trọ.</p>{% endif %}
+</section>
+
+{% if houses %}
+<section class="panel">
+  <div class="heading"><h2>Chuông cửa chung</h2></div>
+  {% if g.actor.role == 'owner' %}
+  <div class="forms">
+    <form action="{{ url_for('device_setup') }}" method="post" class="stack">
+      {{ form_token() }}
+      {% if not g.house_a_id %}<label>Dãy trọ <select name="house_id" required>
+        {% for house in houses %}<option value="{{ house.id }}">{{ house.name }}</option>{% endfor %}
+      </select></label>{% endif %}
+      <label>Mã thiết bị <input name="device_id" pattern="[A-Za-z0-9_\-]{1,48}" maxlength="48" placeholder="doorbell-01" required></label>
+      <button>Đăng ký chuông</button>
+    </form>
+  </div>
+  {% endif %}
+  {% if g.house_a_id %}
+  {% if devices %}
+  <ul class="device-list">{% for device in devices %}<li>{{ device.id }}</li>{% endfor %}</ul>
+  {% else %}<p class="muted empty">Chưa đăng ký thiết bị cho cửa chung.</p>{% endif %}
+  {% else %}
+  <div class="table-wrap"><table>
+    <thead><tr><th scope="col">Dãy trọ</th><th scope="col">Thiết bị</th></tr></thead>
+    <tbody>{% for house in houses %}<tr>
+      <td><strong>{{ house.name }}</strong><small>ID dãy {{ house.id }}</small></td>
+      <td>{% for device in devices if device.house_id == house.id %}<div>{{ device.id }}</div>{% else %}<span class="muted">Chưa gắn</span>{% endfor %}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% endif %}
+</section>
+{% endif %}
+
+<section class="panel" id="visits">
+  <div class="heading">
+    <h2>Lịch sử bấm chuông</h2>
+    {% if houses and not g.house_a_id %}
+    <form method="get" action="{{ url_for('dashboard', _anchor='visits') }}" class="filter">
+      <label>Dãy trọ <select name="house"><option value="">Tất cả</option>
+      {% for h in houses %}<option value="{{ h.id }}"{% if house_id == h.id %} selected{% endif %}>{{ h.name }}</option>{% endfor %}
+      </select></label><button class="quiet">Lọc</button>
+    </form>
+    {% endif %}
+  </div>
+  {% if visits %}
+  <div class="table-wrap"><table class="visits">
+    <thead><tr><th scope="col">Ảnh</th><th scope="col">Dãy trọ và thiết bị</th><th scope="col">Thời gian</th><th scope="col">Mô tả ảnh</th><th scope="col">Trạng thái</th></tr></thead>
+    <tbody>{% for visit in visits %}<tr id="visit-{{ visit.id }}">
+      <td><a href="{{ url_for('visit_photo', visit_id=visit.id) }}" aria-label="Mở ảnh cửa chung {{ visit.name }}"><img src="{{ url_for('visit_photo', visit_id=visit.id) }}" alt="Ảnh từ chuông cửa" width="96" height="72" loading="lazy"></a></td>
+      <td><strong>{{ visit.name }} · Cửa chung</strong><small>{{ visit.device_id }}</small></td>
+      <td>{{ visit.received_at|visit_time }}</td>
+      <td class="visit-description">
+        {{ visit.description or ai_labels.get(visit.analysis_status, 'Chưa có mô tả') }}
+        {% if visit.assistant_turns %}
+        <div class="assistant-history">
+          <strong>Trợ lý Hermes:</strong>
+          {% for turn in visit.assistant_turns %}
+          <div><small>{{ 'Khách' if turn.speaker == 'guest' else 'Hermes' }}:</small> {{ turn.text }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </td>
+      <td>
+        <span class="state {{ visit.state }}">{{ state_labels[visit.state] }}</span>
+        <small>Telegram · {{ notify_labels[visit.notification_status] }}</small>
+        {% if visit.flash_state == 'ready' %}
+        <form action="{{ url_for('visit_flash', visit_id=visit.id) }}" method="post" class="compact">
+          {{ form_token() }}<button class="quiet">Mở cửa mô phỏng</button>
+        </form>
+        {% elif visit.flash_state in ('queued', 'sent') %}
+        <small role="status" data-flash-status="{{ url_for('visit_flash', visit_id=visit.id) }}">Đang chờ ESP32 xác nhận.</small>
+        {% elif visit.flash_state == 'confirmed' %}
+        <small>ESP32 đã xác nhận bật đèn.</small>
+        {% elif visit.flash_state == 'expired' %}
+        <small>Hết hạn chờ ESP32 xác nhận.</small>
+        {% endif %}
+      </td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="muted empty">Chưa có lượt bấm chuông.</p>{% endif %}
+</section>
+
+{% if houses and g.actor.role == 'owner' %}
+<section class="panel">
+  <div class="heading"><h2>{{ 'Thông báo Telegram' if g.house_a_id else 'Cài đặt dãy và Telegram' }}</h2></div>
+  <div class="forms">
+    {% for h in houses %}
+    {% if not g.house_a_id %}<form action="{{ url_for('manage', action='rename-house') }}" method="post" class="stack">
+      {{ form_token() }}<input type="hidden" name="house_id" value="{{ h.id }}">
+      <label>Tên dãy trọ <input name="name" value="{{ h.name }}" maxlength="100" required></label>
+      <button class="quiet">Lưu tên dãy</button>
+    </form>{% endif %}
+    <form action="{{ url_for('manage', action='telegram') }}" method="post" class="stack">
+      {{ form_token() }}{% if not g.house_a_id %}<input type="hidden" name="house_id" value="{{ h.id }}">{% endif %}
+      <label>Chat ID nhận thông báo{% if not g.house_a_id %} · {{ h.name }}{% endif %}<input name="chat_id" value="{{ h.telegram_chat_id }}" maxlength="17"></label>
+      <button class="quiet">Lưu nơi nhận</button>
+    </form>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% if visits|selectattr('flash_state', 'in', ['queued', 'sent'])|list %}
+<script defer src="{{ url_for('static', filename='flash_status.js') }}"></script>
+{% endif %}
+{% endblock %}

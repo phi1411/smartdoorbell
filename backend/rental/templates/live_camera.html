@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Camera trực tiếp</h1>
+<link rel="stylesheet" href="{{ url_for('static', filename='live_camera.css') }}">
+{% if devices %}
+<section class="panel camera-panel" id="live-camera" data-csrf="{{ session.csrf }}">
+  <div class="camera-controls">
+    <label>Camera <select id="camera-device">
+      {% for device in devices %}
+      <option value="{{ device.id }}" data-start="{{ url_for('live.start', device=device.id) }}"
+        data-renew="{{ url_for('live.renew', device=device.id) }}" data-stop="{{ url_for('live.stop', device=device.id) }}"
+        data-stream="{{ url_for('live.stream', device=device.id) }}"
+        data-snapshot="{{ url_for('live.snapshot', device=device.id) }}"
+        data-flash="{{ url_for('live.direct_flash', device=device.id) }}">{{ device.name }} · Cửa chung ({{ device.id }})</option>
+      {% endfor %}
+    </select></label>
+    <button type="button" id="camera-start">Bắt đầu xem</button>
+    <button type="button" class="quiet" id="camera-stop" disabled>Dừng xem</button>
+  </div>
+  <div class="camera-actions">
+    <button type="button" class="quiet" id="camera-snapshot">Chụp ảnh ngay</button>
+    <button type="button" class="quiet" id="camera-flash">Mở cửa mô phỏng</button>
+  </div>
+  <p id="snapshot-status" role="status" class="muted camera-feedback"></p>
+  <p id="direct-flash-status" role="status" class="muted camera-feedback"></p>
+  <figure id="camera-snapshot-result" class="camera-snapshot" hidden>
+    <img id="camera-snapshot-frame" alt="Ảnh vừa chụp từ camera cửa chung">
+    <figcaption id="camera-snapshot-caption"></figcaption>
+  </figure>
+  <div class="camera-viewport">
+    <img id="camera-frame" alt="Hình ảnh trực tiếp từ camera cửa chung" hidden>
+    <p id="camera-status" role="status">Chọn camera và bấm Bắt đầu xem.</p>
+  </div>
+  <p class="camera-note muted">Phiên xem tự dừng khi rời trang.</p>
+  <noscript><p class="camera-note">Bật JavaScript để xem hình ảnh trực tiếp.</p></noscript>
+</section>
+<script defer src="{{ url_for('static', filename='live_camera.js', v='direct-door') }}"></script>
+{% else %}
+<section class="panel"><p class="empty">Dãy trọ chưa có camera được đăng ký.</p></section>
+{% endif %}
+{% endblock %}

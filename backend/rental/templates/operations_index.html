@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% from "operations_shared.html" import token, notices_for_page, lease_summary with context %}
+{% set operator = role in ('owner', 'manager') %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='operations.css') }}">
+<h1>{% if role == 'tenant' %}Phòng của tôi{% elif role == 'technician' %}Bảo trì nhà trọ{% else %}Vận hành nhà trọ{% endif %}</h1>
+{{ notices_for_page() }}
+{% if resident %}<p class="ops-context">{{ resident.house_name }} · Phòng {{ resident.code }} · {{ resident.name }}{% if resident.ended_at %} · Đã trả phòng{% endif %}</p>{% endif %}
+<nav class="ops-nav" aria-label="Mục vận hành">
+  {% if operator %}<a href="#leases">Hợp đồng</a>{% endif %}
+  {% if operator or role == 'tenant' %}<a href="#invoices">Hóa đơn</a>{% endif %}
+  <a href="#maintenance">Bảo trì</a>
+  {% if role != 'technician' %}<a href="#notices">Thông báo</a>{% endif %}
+</nav>
+
+{% if operator %}
+<section class="panel" id="leases">
+  <div class="heading"><h2>Hợp đồng và điều khoản thuê</h2></div>
+  {% if stays %}
+  <div class="table-wrap"><table>
+    <thead><tr><th scope="col">Dãy và phòng</th><th scope="col">Người thuê</th><th scope="col">Thao tác</th></tr></thead>
+    <tbody>{% for stay in stays %}<tr>
+      <td>{{ stay.house_name }} · {{ stay.code }}</td><td>{{ stay.name }}{% if stay.ended_at %}<small>Đã trả phòng</small>{% endif %}</td>
+      <td><a href="{{ url_for('operations.lease_terms', stay_id=stay.id) }}">{{ 'Hợp đồng cũ và hóa đơn' if stay.ended_at else 'Điều khoản và lập hóa đơn' }}</a></td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}<p class="empty muted">Chưa có lượt thuê trong dãy đã chọn.</p>{% endif %}
+</section>
+{% elif role == 'tenant' %}
+<section class="panel" id="leases"><div class="heading"><h2>Điều khoản thuê</h2></div>
+  {% if lease %}{{ lease_summary(lease) }}{% else %}<p class="empty muted">Quản lý chưa cập nhật điều khoản thuê.</p>{% endif %}
+</section>
+{% endif %}
+
+{% if operator or role == 'tenant' %}
+<section class="panel" id="invoices">
+  <div class="heading"><h2>Hóa đơn{% if month %} tháng {{ month[5:] }}/{{ month[:4] }}{% endif %}</h2>
+    <form class="filter ops-filter" method="get" action="{{ url_for('operations.index', _anchor='invoices') }}">
+      {% if role == 'owner' and not g.house_a_id %}<label>Dãy trọ <select name="house"><option value="">Tất cả dãy</option>
+        {% for house in house_choices %}<option value="{{ house.id }}"{% if house.id == selected_house %} selected{% endif %}>{{ house.name }}</option>{% endfor %}
+      </select></label>{% endif %}
+      <label>Kỳ (trống để xem tất cả) <input type="month" name="month" value="{{ month }}"></label>
+      <button class="quiet">Lọc</button>
+    </form>
+  </div>
+  <dl class="ops-metrics">
+    <div><dt>Tổng hóa đơn</dt><dd>{{ totals.billed|rental_money }}</dd></div>
+    <div><dt>Đã thanh toán</dt><dd>{{ totals.paid|rental_money }}</dd></div>
+    <div><dt>Còn phải thanh toán</dt><dd>{{ totals.outstanding|rental_money }}</dd></div>
+  </dl>
+  {% if invoices %}<div class="table-wrap"><table>
+    <thead><tr><th scope="col">Kỳ</th>{% if operator %}<th scope="col">Phòng · Người thanh toán</th>{% endif %}<th scope="col">Tổng</th><th scope="col">Còn lại</th><th scope="col">Trạng thái</th></tr></thead>
+    <tbody>{% for invoice in invoices %}<tr>
+      <td><a href="{{ url_for('operations.invoice_detail', invoice_id=invoice.id) }}">{{ invoice.month[5:] }}/{{ invoice.month[:4] }}</a><small>Hạn {{ invoice.due_on }}</small></td>
+      {% if operator %}<td>{{ invoice.house_name }} · {{ invoice.code }}<small>{{ invoice.resident_name }}</small></td>{% endif %}
+      <td>{{ invoice.total_vnd|rental_money }}</td><td>{% if invoice.void_id %}—{% else %}{{ (invoice.total_vnd-invoice.paid_vnd)|rental_money }}{% endif %}</td>
+      <td>{{ invoice_status(invoice,today) }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>{% else %}<p class="empty muted">Chưa có hóa đơn phù hợp.</p>{% endif %}
+</section>
+{% endif %}
+
+<section class="panel" id="maintenance">
+  <div class="heading"><h2>Yêu cầu bảo trì</h2></div>
+  {% if role == 'tenant' and not resident.ended_at %}
+  {% if voice_repair_available %}
+  <p class="ops-note"><a href="{{ url_for('tenant_repair.index') }}">Báo sửa chữa bằng giọng nói</a></p>
+  {% endif %}
+  <form class="ops-form stack" action="{{ url_for('operations.create_ticket') }}" method="post">
+    {{ token() }}
+    <div class="ops-grid">
+      <label>Loại sự cố <select name="category" required><option value="">Chọn loại</option>{% for key, label in ticket_categories.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></label>
+      <label>Tiêu đề <input name="subject" maxlength="100" required></label>
+    </div>
+    <label>Mô tả sự cố <textarea name="description" rows="3" maxlength="1500" required></textarea></label>
+    <button>Gửi yêu cầu</button>
+  </form>
+  {% endif %}
+  {% if tickets %}<div class="ops-records">
+    {% for ticket in tickets %}<article class="ops-record">
+      <header><h3>{{ ticket.subject }}</h3><span class="ops-status">{{ ticket_states[ticket.status] }}</span></header>
+      <small>{% if role != 'tenant' %}{{ ticket.house_name }} · Phòng {{ ticket.code }} · {% endif %}{{ ticket_categories[ticket.category] }} · {{ ticket.created_at[:10] }}</small>
+      <p class="ops-preline">{{ ticket.description }}</p>
+      {% if ticket.resolution %}<p class="ops-preline"><strong>Phản hồi</strong><br>{{ ticket.resolution }}</p>{% endif %}
+      {% if role != 'tenant' and (role != 'technician' or ticket.status != 'resolved') %}
+      <details><summary>Cập nhật yêu cầu</summary>
+        <form class="stack" action="{{ url_for('operations.update_ticket', ticket_id=ticket.id) }}" method="post">
+          {{ token() }}
+          <input type="hidden" name="revision" value="{{ ticket_revision(ticket) }}">
+          <label>Trạng thái <select name="status">{% for key, label in ticket_states.items() if role != 'technician' or key != 'open' %}<option value="{{ key }}"{% if key == ticket.status %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+          <label>Phản hồi cho người thuê <textarea name="resolution" rows="2" maxlength="1500">{{ ticket.resolution }}</textarea></label>
+          <button>Lưu cập nhật</button>
+        </form>
+      </details>
+      {% endif %}
+    </article>{% endfor %}
+  </div>{% else %}<p class="empty muted">Chưa có yêu cầu bảo trì.</p>{% endif %}
+</section>
+
+{% if role != 'technician' %}
+<section class="panel" id="notices">
+  <div class="heading"><h2>Thông báo dãy trọ</h2></div>
+  {% if operator and houses %}
+  <form class="ops-form stack" action="{{ url_for('operations.publish_notice') }}" method="post">
+    {{ token() }}
+    <div class="ops-grid">
+      {% if not g.house_a_id %}<label>Dãy trọ <select name="house_id" required>{% for house in houses %}<option value="{{ house.id }}">{{ house.name }}</option>{% endfor %}</select></label>{% endif %}
+      <label>Tiêu đề <input name="title" maxlength="100" required></label>
+    </div>
+    <label>Nội dung <textarea name="body" rows="3" maxlength="2000" required></textarea></label>
+    <button>Đăng thông báo</button>
+  </form>
+  {% endif %}
+  {% if notices %}<div class="ops-records">{% for notice in notices %}<article class="ops-record">
+    <header><h3>{{ notice.title }}</h3>
+      {% if operator %}<form action="{{ url_for('operations.archive_notice', notice_id=notice.id) }}" method="post">{{ token() }}<button class="quiet">Ẩn</button></form>{% endif %}
+    </header>
+    <small>{{ notice.house_name }} · {{ notice.published_at[:10] }}</small>
+    <p class="ops-preline">{{ notice.body }}</p>
+  </article>{% endfor %}</div>{% else %}<p class="empty muted">Chưa có thông báo.</p>{% endif %}
+</section>
+{% endif %}
+{% endblock %}

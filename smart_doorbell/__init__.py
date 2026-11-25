@@ -1,2 +1,0 @@
-"""Smart Doorbell application package."""
-

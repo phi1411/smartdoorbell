@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from "operations_shared.html" import token, notices_for_page, lease_summary with context %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='operations.css') }}">
+<p class="ops-context"><a href="{{ url_for('operations.index', _anchor='leases') }}">Vận hành nhà trọ</a> / {{ resident.house_name }} · Phòng {{ resident.code }}</p>
+<h1>Điều khoản thuê · {{ resident.name }}</h1>
+{{ notices_for_page() }}
+<section class="panel">
+  <div class="heading"><h2>Thông tin hợp đồng</h2></div>
+  {% if resident.ended_at %}
+    <p class="empty muted">Đã trả phòng.{% if resident.ended_on %} Ngày {{ resident.ended_on }}.{% endif %}</p>
+    {% if lease %}{{ lease_summary(lease) }}{% endif %}
+  {% else %}
+  <form class="ops-form stack" method="post">
+    {{ token() }}
+    <div class="ops-grid">
+      <label>Mã hợp đồng <input name="reference" maxlength="80" value="{{ lease.reference if lease else '' }}" required></label>
+      <label>Ngày bắt đầu <input name="starts_on" type="date" value="{{ lease.starts_on if lease else resident.started_on }}" required></label>
+      <label>Ngày kết thúc <input name="ends_on" type="date" value="{{ lease.ends_on or '' if lease else '' }}"></label>
+      <label>Tiền thuê hằng tháng (₫) <input name="rent_vnd" type="number" min="0" max="1000000000" step="1" value="{{ lease.rent_vnd if lease else '' }}" required></label>
+      <label>Tiền cọc (₫) <input name="deposit_vnd" type="number" min="0" max="1000000000" step="1" value="{{ lease.deposit_vnd if lease else 0 }}"></label>
+      <label>Đơn giá điện (₫/kWh) <input name="electricity_rate" type="number" min="0" max="1000000000" step="1" value="{{ lease.electricity_rate if lease else 0 }}"></label>
+      <label>Đơn giá nước (₫/m³) <input name="water_rate" type="number" min="0" max="1000000000" step="1" value="{{ lease.water_rate if lease else 0 }}"></label>
+    </div>
+    <label>Ghi chú người thuê có thể xem <textarea name="notes" rows="3" maxlength="1000">{{ lease.notes if lease else '' }}</textarea></label>
+    <button>Lưu điều khoản</button>
+  </form>
+  {% endif %}
+</section>
+{% if reissue or default_month %}
+<section class="panel" id="monthly-invoice">
+  <div class="heading"><h2>{{ 'Lập lại hóa đơn tháng' if reissue else 'Lập hóa đơn tháng' }}</h2></div>
+  <p class="empty muted">Người thanh toán hóa đơn của phòng là {{ resident.name }}.{% if not reissue %} Tiền thuê theo điều khoản là {{ lease.rent_vnd|rental_money }}.{% if resident.ended_at %} Có thể lập hóa đơn còn thiếu cho các kỳ từ {{ first_month }} đến {{ last_month }}.{% endif %}{% endif %}</p>
+  <form class="ops-form stack" action="{{ url_for('operations.issue_invoice',stay_id=resident.id) }}" method="post">
+    {{ token() }}
+    {% if reissue %}
+    <input type="hidden" name="reissue_id" value="{{ reissue.id }}">
+    <input type="hidden" name="reissue_void_id" value="{{ reissue.void_id }}">
+    {% endif %}
+    <div class="ops-grid">
+      <label>Kỳ hóa đơn <input name="month" type="month" value="{{ reissue.month if reissue else default_month }}"{% if reissue %} readonly{% else %} min="{{ first_month }}"{% if last_month %} max="{{ last_month }}"{% endif %} required{% endif %}></label>
+      <label>Hạn thanh toán <input name="due_on" type="date" value="{{ reissue.due_on if reissue else '' }}" required></label>
+      {% if reissue %}
+      <label>Tiền thuê (₫) <input name="rent_vnd" type="number" min="0" max="1000000000" step="1" value="{{ reissue.rent_vnd }}" required></label>
+      <label>Đơn giá điện (₫/kWh) <input name="electricity_rate" type="number" min="0" max="1000000000" step="1" value="{{ reissue.electricity_rate }}" required></label>
+      <label>Đơn giá nước (₫/m³) <input name="water_rate" type="number" min="0" max="1000000000" step="1" value="{{ reissue.water_rate }}" required></label>
+      {% endif %}
+      <label>Chỉ số điện đầu kỳ (kWh) <input name="electricity_start" type="number" min="0" max="1000000000" step="1" value="{{ reissue.electricity_start if reissue else '' }}" required></label>
+      <label>Chỉ số điện cuối kỳ (kWh) <input name="electricity_end" type="number" min="0" max="1000000000" step="1" value="{{ reissue.electricity_end if reissue else '' }}" required></label>
+      <label>Chỉ số nước đầu kỳ (m³) <input name="water_start" type="number" min="0" max="1000000000" step="1" value="{{ reissue.water_start if reissue else '' }}" required></label>
+      <label>Chỉ số nước cuối kỳ (m³) <input name="water_end" type="number" min="0" max="1000000000" step="1" value="{{ reissue.water_end if reissue else '' }}" required></label>
+      <label>Phí khác (₫) <input name="other_vnd" type="number" min="0" max="1000000000" step="1" value="{{ reissue.other_vnd if reissue else 0 }}"></label>
+    </div>
+    <label>Diễn giải hóa đơn <textarea name="notes" rows="2" maxlength="500">{{ reissue.notes if reissue else '' }}</textarea></label>
+    <button>{{ 'Lập lại hóa đơn' if reissue else 'Lập hóa đơn' }}</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

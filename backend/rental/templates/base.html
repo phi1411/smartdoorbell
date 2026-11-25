@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quản lý nhà trọ</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='rental.css') }}">
+  {% block page_styles %}{% endblock %}
+</head>
+<body>
+  <header class="top"><div class="shell bar">
+    <a href="{{ url_for('dashboard') }}" class="brand">Quản lý nhà trọ</a>
+    {% if g.actor %}
+      <nav aria-label="Mục quản lý">
+        {% if g.actor.role in ('owner', 'manager') %}
+          <a href="{{ url_for('dashboard') }}" {% if request.endpoint == 'dashboard' %}aria-current="page"{% endif %}>Phòng và người thuê</a>
+          <a href="{{ url_for('live.index') }}" {% if request.blueprint == 'live' %}aria-current="page"{% endif %}>Camera trực tiếp</a>
+          <a href="{{ url_for('intercom.index') }}" {% if request.blueprint == 'intercom' %}aria-current="page"{% endif %}>Liên lạc cửa chung</a>
+        {% endif %}
+        <a href="{{ url_for('operations.index') }}" {% if request.blueprint == 'operations' %}aria-current="page"{% endif %}>{{ 'Phòng của tôi' if g.actor.role == 'tenant' else 'Bảo trì' if g.actor.role == 'technician' else 'Vận hành' }}</a>
+        {% if g.actor.role in ('owner', 'manager', 'tenant') %}
+          <a href="{{ url_for('hermes_lookup.index') }}" {% if request.blueprint == 'hermes_lookup' %}aria-current="page"{% endif %}>Hỏi Hermes</a>
+        {% endif %}
+        {% if g.actor.role == 'owner' %}
+          <a href="{{ url_for('accounts.index') }}" {% if request.blueprint == 'accounts' %}aria-current="page"{% endif %}>Tài khoản</a>
+        {% else %}
+          <a href="{{ url_for('accounts.password') }}" {% if request.blueprint == 'accounts' %}aria-current="page"{% endif %}>Đổi mật khẩu</a>
+        {% endif %}
+      </nav>
+      <form method="post" action="{{ url_for('logout') }}">
+        <input type="hidden" name="csrf" value="{{ session.csrf }}"><button class="quiet" title="{{ g.actor.display_name }} · {{ role_labels[g.actor.role] }}">Đăng xuất</button>
+      </form>
+    {% endif %}
+  </div></header>
+  <main class="shell">{% block content %}{% endblock %}</main>
+</body>
+</html>

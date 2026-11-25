@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "intercom_audio.html" import controls %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='intercom.css') }}">
+<h1>Điện thoại ở cửa</h1>
+{% for category, message in get_flashed_messages(with_categories=true) %}
+<p class="notice {{ category }}" role="status">{{ message }}</p>
+{% endfor %}
+{% if paired %}
+<section class="panel intercom-panel" id="intercom-audio"
+         data-side="station" data-state-url="{{ url_for('intercom.station_state') }}"
+         data-signal-url="{{ url_for('intercom.station_signal') }}"
+         data-assistant-url="{{ url_for('intercom.station_assistant') }}" data-csrf="{{ station_csrf }}">
+  <h2>{{ station_name or 'Chuông cửa chung' }}</h2>
+  {{ controls() }}
+  <audio id="intercom-greeting" preload="none" src="{{ url_for('static', filename='intercom-greeting-vi.wav') }}"></audio>
+  <section id="intercom-assistant" class="intercom-assistant" hidden aria-live="polite">
+    <div class="intercom-assistant-head">
+      <strong>Trợ lý Hermes đang tiếp khách</strong>
+      <button type="button" id="assistant-replay" class="quiet" hidden>Nghe lời chào</button>
+      <button type="button" id="assistant-replay-reply" class="quiet" hidden>Nghe câu trả lời</button>
+      <button type="button" id="assistant-speak" class="quiet">Nói với trợ lý</button>
+    </div>
+    <p id="assistant-status" class="muted"></p>
+    <div id="assistant-log" class="assistant-log"></div>
+    <form id="assistant-form" class="assistant-form">
+      <input type="text" id="assistant-input" maxlength="400" placeholder="Hoặc nhập lời nhắn gửi chủ trọ…" autocomplete="off">
+      <button type="submit" id="assistant-send" class="quiet">Gửi</button>
+    </form>
+  </section>
+  <p class="muted">Giữ trang này mở trên điện thoại ở cửa. Sau 15 giây chưa có người trả lời, Hermes sẽ chào và lắng nghe. Gemini xử lý giọng nói và đọc câu trả lời tiếng Việt.</p>
+  <details class="intercom-end">
+    <summary>Cài đặt điện thoại</summary>
+    <form method="post" action="{{ url_for('intercom.station_unpair') }}">
+      <input type="hidden" name="csrf" value="{{ station_csrf }}">
+      <button class="quiet">Ngắt ghép điện thoại</button>
+    </form>
+  </details>
+</section>
+<script defer src="{{ url_for('static', filename='intercom.js', v='assistant-conversation') }}"></script>
+{% else %}
+<section class="panel intercom-panel">
+  <h2>Ghép với chuông cửa</h2>
+  <p>Nhập mã do chủ trọ tạo. Bạn chỉ cần ghép một lần trên trình duyệt này. Mã có hiệu lực 5 phút để nhập.</p>
+  <form method="post" action="{{ url_for('intercom.station_pair') }}" class="stack">
+    <input type="hidden" name="csrf" value="{{ station_csrf }}">
+    <label>Mã ghép
+      <input name="code" maxlength="8" minlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
+    </label>
+    <button>Ghép điện thoại</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

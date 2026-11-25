@@ -1,0 +1,18 @@
+{%- for visit in incoming %}
+  {%- if visit.answered_by %}
+  <div class="resident compact">
+    <span><strong>{{ visit.name }} · Cửa chung</strong><small>Đang nói chuyện</small></span>
+    {% if visit.can_rejoin %}
+    <a href="{{ url_for('intercom.operator', visit_id=visit.id) }}">Vào lại cuộc gọi</a>
+    {% endif %}
+  </div>
+  {%- else %}
+  <form class="resident compact" method="post" action="{{ url_for('intercom.answer', visit_id=visit.id) }}">
+    <input type="hidden" name="csrf" value="{{ session.csrf }}">
+    <span><strong>{{ visit.name }} · Cửa chung</strong><small>{% if visit.assistant_active %}Hermes đang tiếp khách · {% endif %}{{ visit.received_at|visit_time }}</small></span>
+    <button>{{ 'Trả lời ngay' if visit.assistant_active else 'Trả lời' }}</button>
+  </form>
+  {%- endif %}
+{%- else %}
+  <p class="muted empty">Chưa có lượt chuông mới.</p>
+{%- endfor %}

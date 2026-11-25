@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.rental.example
+*.db
+*.db-*
+*.sqlite*
+data/
+__pycache__/
+.pytest_cache/
+.venv/

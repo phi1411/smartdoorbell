@@ -1,0 +1,13 @@
+{% macro controls() %}
+<p id="intercom-state" class="intercom-state" role="status">Đang kết nối…</p>
+<div class="intercom-controls">
+  <button type="button" id="intercom-enable">Bật mic và loa</button>
+  <button type="button" id="intercom-mute" class="quiet" aria-pressed="false" hidden>Tắt mic</button>
+  <button type="button" id="intercom-listen" class="quiet" hidden>Bật loa</button>
+  <button type="button" id="intercom-retry" class="quiet" hidden>Thử kết nối lại</button>
+  <a href="" id="intercom-reconnect" hidden>Tải lại để kết nối</a>
+</div>
+<p id="intercom-feedback" class="muted intercom-feedback" role="status"></p>
+<audio id="intercom-player" autoplay playsinline hidden></audio>
+<noscript><p>Bật JavaScript để đàm thoại.</p></noscript>
+{% endmacro %}

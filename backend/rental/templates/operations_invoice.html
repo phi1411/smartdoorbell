@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% from "operations_shared.html" import token, notices_for_page with context %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='operations.css') }}">
+<p class="ops-context"><a href="{{ url_for('operations.index',month=invoice.month,_anchor='invoices') }}">Hóa đơn</a> / {{ invoice.house_name }} · Phòng {{ invoice.code }}</p>
+<h1>Hóa đơn tháng {{ invoice.month[5:] }}/{{ invoice.month[:4] }}</h1>
+{{ notices_for_page() }}
+<section class="panel">
+  <div class="heading"><h2>Chi tiết phí</h2><span class="ops-status">{{ status }}</span></div>
+  <dl class="ops-facts">
+    <div><dt>Lần phát hành</dt><dd>{{ invoice.issue_number }}</dd></div>
+    <div><dt>Người thanh toán</dt><dd>{{ invoice.resident_name }}</dd></div>
+    <div><dt>Hạn thanh toán</dt><dd>{{ invoice.due_on }}</dd></div>
+    <div><dt>Tiền thuê</dt><dd>{{ invoice.rent_vnd|rental_money }}</dd></div>
+    <div><dt>Tiền điện</dt><dd>{{ ((invoice.electricity_end-invoice.electricity_start)*invoice.electricity_rate)|rental_money }}<small>{{ invoice.electricity_start }} → {{ invoice.electricity_end }} kWh · {{ invoice.electricity_rate|rental_money }}/kWh</small></dd></div>
+    <div><dt>Tiền nước</dt><dd>{{ ((invoice.water_end-invoice.water_start)*invoice.water_rate)|rental_money }}<small>{{ invoice.water_start }} → {{ invoice.water_end }} m³ · {{ invoice.water_rate|rental_money }}/m³</small></dd></div>
+    <div><dt>Phí khác</dt><dd>{{ invoice.other_vnd|rental_money }}</dd></div>
+    <div><dt>Tổng cộng</dt><dd>{{ invoice.total_vnd|rental_money }}</dd></div>
+    <div><dt>Đã thanh toán</dt><dd>{{ invoice.paid_vnd|rental_money }}</dd></div>
+    <div><dt>Còn phải thanh toán</dt><dd>{% if invoice.void_id %}—{% else %}{{ (invoice.total_vnd-invoice.paid_vnd)|rental_money }}{% endif %}</dd></div>
+  </dl>
+  {% if invoice.notes %}<p class="ops-note ops-preline">{{ invoice.notes }}</p>{% endif %}
+  {% if may_record and invoice.void_id %}
+  <p class="ops-note"><a href="{{ url_for('operations.lease_terms',stay_id=invoice.stay_id,reissue=invoice.id,_anchor='monthly-invoice') }}">Lập lại hóa đơn kỳ này</a></p>
+  {% elif may_record and not invoice.paid_vnd %}
+  <details class="ops-correction">
+    <summary>Hủy hóa đơn</summary>
+    <form class="stack" action="{{ url_for('operations.void_invoice',invoice_id=invoice.id) }}" method="post">
+      {{ token() }}<input type="hidden" name="issue_number" value="{{ invoice.issue_number }}">
+      <label>Lý do hủy <textarea name="reason" rows="2" maxlength="500" required></textarea></label>
+      <button class="quiet">Xác nhận hủy hóa đơn</button>
+    </form>
+  </details>
+  {% endif %}
+</section>
+<section class="panel">
+  <div class="heading"><h2>Lịch sử thanh toán</h2></div>
+  {% if payments %}<div class="table-wrap"><table>
+    <thead><tr><th scope="col">Ngày nhận</th><th scope="col">Hình thức</th><th scope="col">Số tiền</th><th scope="col">Trạng thái</th>{% if may_record %}<th scope="col">Người ghi nhận</th>{% endif %}</tr></thead>
+    <tbody>{% for payment in payments %}<tr>
+      <td>{{ payment.paid_on }}{% if may_record and payment.note %}<small>{{ payment.note }}</small>{% endif %}</td>
+      <td>{{ payment_methods[payment.method] }}</td><td>{{ payment.amount_vnd|rental_money }}</td>
+      <td>{% if payment.voided_at %}Đã hủy{% if may_record %}<small>{{ payment.voided_by }} · {{ payment.voided_at[:10] }}<br>{{ payment.void_reason }}</small>{% endif %}{% else %}Đã ghi nhận{% endif %}</td>
+      {% if may_record %}<td>{{ payment.recorded_by }}
+        {% if not payment.voided_at %}<details class="ops-correction ops-inline-correction">
+          <summary>Hủy ghi nhận khoản thu</summary>
+          <form class="stack" action="{{ url_for('operations.void_payment',invoice_id=invoice.id,payment_id=payment.id) }}" method="post">
+            {{ token() }}
+            <label>Lý do hủy <textarea name="reason" rows="2" maxlength="500" required></textarea></label>
+            <button class="quiet">Xác nhận hủy ghi nhận</button>
+          </form>
+        </details>{% endif %}
+      </td>{% endif %}
+    </tr>{% endfor %}</tbody>
+  </table></div>{% else %}<p class="empty muted">Chưa có khoản thu được ghi nhận.</p>{% endif %}
+  {% if may_record and not invoice.void_id and invoice.paid_vnd < invoice.total_vnd %}
+  <form class="ops-form stack" action="{{ url_for('operations.record_payment',invoice_id=invoice.id) }}" method="post">
+    {{ token() }}<input type="hidden" name="request_key" value="{{ request_key }}">
+    <input type="hidden" name="issue_number" value="{{ invoice.issue_number }}">
+    <div class="ops-grid">
+      <label>Số tiền đã nhận (₫) <input name="amount_vnd" type="number" min="1" max="{{ invoice.total_vnd-invoice.paid_vnd }}" step="1" required></label>
+      <label>Ngày nhận tiền <input name="paid_on" type="date" max="{{ today }}" value="{{ today }}" required></label>
+      <label>Hình thức <select name="method" required>{% for key, label in payment_methods.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></label>
+    </div>
+    <label>Ghi chú nội bộ <textarea name="note" rows="2" maxlength="500"></textarea></label>
+    <button>Ghi nhận khoản thu</button>
+  </form>
+  {% endif %}
+</section>
+{% if revisions %}
+<section class="panel">
+  <div class="heading"><h2>Lịch sử phát hành</h2></div>
+  <div class="ops-records">{% for revision in revisions %}<article class="ops-record">
+    <header><h3>Lần {{ revision.snapshot.issue_number }} · {{ revision.snapshot.total_vnd|rental_money }}</h3><span class="ops-status">Đã hủy</span></header>
+    <small>Ngày lập {{ revision.snapshot.created_at[:10] }} · Ngày hủy {{ revision.voided_at[:10] }}{% if may_record %} · {{ revision.voided_by }}{% endif %}{% if revision.reissued_at %} · Lập lại {{ revision.reissued_at[:10] }}{% endif %}</small>
+    <details><summary>Xem các khoản đã lập</summary>
+      <p>Hạn thanh toán {{ revision.snapshot.due_on }} · Tiền thuê {{ revision.snapshot.rent_vnd|rental_money }}</p>
+      <p>Điện {{ revision.snapshot.electricity_start }} → {{ revision.snapshot.electricity_end }} kWh · {{ revision.snapshot.electricity_rate|rental_money }}/kWh</p>
+      <p>Nước {{ revision.snapshot.water_start }} → {{ revision.snapshot.water_end }} m³ · {{ revision.snapshot.water_rate|rental_money }}/m³</p>
+      <p>Phí khác {{ revision.snapshot.other_vnd|rental_money }}</p>
+      {% if revision.snapshot.notes %}<p class="ops-preline">{{ revision.snapshot.notes }}</p>{% endif %}
+      {% if may_record %}<p class="ops-preline"><strong>Lý do hủy</strong><br>{{ revision.reason }}</p>{% endif %}
+    </details>
+  </article>{% endfor %}</div>
+</section>
+{% endif %}
+{% endblock %}

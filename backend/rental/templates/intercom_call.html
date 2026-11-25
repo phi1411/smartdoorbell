@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "intercom_audio.html" import controls %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='intercom.css') }}">
+<p><a href="{{ url_for('dashboard', _anchor='visit-' ~ visit_id) }}">Về lượt chuông</a></p>
+<h1>Đàm thoại với khách</h1>
+{% for category, message in get_flashed_messages(with_categories=true) %}
+<p class="notice {{ category }}" role="status">{{ message }}</p>
+{% endfor %}
+<section class="panel intercom-panel" id="intercom-audio"
+         data-side="operator" data-state-url="{{ url_for('intercom.operator_state', visit_id=visit_id) }}"
+         data-signal-url="{{ url_for('intercom.operator_signal', visit_id=visit_id) }}" data-csrf="{{ session.csrf }}">
+  <h2>{{ house_name }} · Cửa chung</h2>
+  {{ controls() }}
+  {% if flash_state == 'ready' %}
+  <form method="post" action="{{ url_for('visit_flash', visit_id=visit_id) }}" id="intercom-flash" data-flash-command hidden>
+    <input type="hidden" name="csrf" value="{{ session.csrf }}">
+    <button class="quiet">Mở cửa mô phỏng</button>
+    <p role="status"></p>
+  </form>
+  {% elif flash_state in ('queued', 'sent') %}
+  <p role="status" data-flash-status="{{ url_for('visit_flash', visit_id=visit_id) }}">Đang chờ ESP32 xác nhận.</p>
+  {% elif flash_state == 'confirmed' %}
+  <p role="status">ESP32 đã xác nhận bật đèn.</p>
+  {% elif flash_state == 'expired' %}
+  <p role="status">Hết hạn chờ ESP32 xác nhận.</p>
+  {% endif %}
+  <form method="post" action="{{ url_for('intercom.operator_end', visit_id=visit_id) }}" class="intercom-end">
+    <input type="hidden" name="csrf" value="{{ session.csrf }}">
+    <button class="quiet" id="intercom-end" disabled>Kết thúc đàm thoại</button>
+  </form>
+</section>
+<script defer src="{{ url_for('static', filename='intercom.js') }}"></script>
+{% if flash_state in ('ready', 'queued', 'sent') %}<script defer src="{{ url_for('static', filename='flash_status.js') }}"></script>{% endif %}
+{% endblock %}

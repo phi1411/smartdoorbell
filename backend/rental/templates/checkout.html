@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="login panel">
+  <h1>Xác nhận trả phòng</h1>
+  <p><strong>{{ resident.name }}</strong> · {{ resident.house }} · Phòng {{ resident.code }}</p>
+  <p>Mẫu khuôn mặt và mã mời còn hiệu lực sẽ bị gỡ. Hóa đơn và yêu cầu sửa chữa đã lưu vẫn có trong lịch sử.</p>
+  <form class="stack" action="{{ url_for('manage', action='checkout') }}" method="post">
+    <input type="hidden" name="csrf" value="{{ session.csrf }}">
+    <input type="hidden" name="stay_id" value="{{ stay_id }}">
+    <button>Xác nhận trả phòng</button>
+  </form>
+  <p><a href="{{ url_for('dashboard', _anchor='rooms') }}">Quay lại danh sách phòng</a></p>
+</section>
+{% endblock %}

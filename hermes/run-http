@@ -1,0 +1,2 @@
+#!/bin/sh
+exec nginx -c /opt/doorbell-hermes/nginx.conf -g 'daemon off;'

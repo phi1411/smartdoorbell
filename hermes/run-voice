@@ -1,0 +1,2 @@
+#!/command/with-contenv sh
+exec s6-setuidgid hermes python3 /opt/doorbell-hermes/voice_gateway.py

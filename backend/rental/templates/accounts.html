@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Tài khoản</h1>
+{% for category, message in get_flashed_messages(with_categories=true) %}
+  <p class="notice {{ category }}" role="status">{{ message }}</p>
+{% endfor %}
+<section class="panel" id="invite">
+  <div class="heading"><h2>Mời người thuê đăng ký</h2></div>
+  {% if available_stays %}
+  <div class="forms">
+    <form method="post" action="{{ url_for('accounts.invite') }}" class="stack">
+      <input type="hidden" name="csrf" value="{{ session.csrf }}">
+      <label>Người đang thuê <select name="stay_id" required>
+        <option value="">Chọn hồ sơ và phòng</option>
+        {% for stay in available_stays %}<option value="{{ stay.id }}">{{ stay.name }} · Phòng {{ stay.code }}{% if not g.house_a_id %} · {{ stay.property }}{% endif %}{% if stay.invite_active %} · Có mã mời{% elif stay.expires_at %} · Mã đã hết hạn{% endif %}</option>{% endfor %}
+      </select></label>
+      <button>Tạo mã mời</button>
+    </form>
+  </div>
+  {% elif not stays %}
+  <p class="empty muted">Thêm người thuê trước để cấp mã mời. <a href="{{ url_for('dashboard', _anchor='rooms') }}">Quản lý phòng</a></p>
+  {% else %}
+  <p class="empty muted">Tất cả người đang thuê đã có tài khoản.</p>
+  {% endif %}
+  {% if active_invites %}
+  <div class="table-wrap"><table>
+    <thead><tr><th scope="col">Người đang thuê</th><th scope="col">Mã mời hết hạn lúc</th><th scope="col">Thao tác</th></tr></thead>
+    <tbody>{% for invite in active_invites %}<tr>
+      <td>{{ invite.name }}<small>Phòng {{ invite.code }}{% if not g.house_a_id %} · {{ invite.property }}{% endif %}</small></td>
+      <td>{{ invite.expires_at|visit_time }}</td>
+      <td><form method="post" action="{{ url_for('accounts.revoke_invite', stay_id=invite.id) }}">
+        <input type="hidden" name="csrf" value="{{ session.csrf }}">
+        <input type="hidden" name="revision" value="{{ invite.invite_revision }}">
+        <button class="quiet" aria-label="Hủy mã mời của {{ invite.name }}">Hủy mã mời</button>
+      </form></td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% endif %}
+</section>
+<section class="panel">
+  <div class="heading"><h2>Cấp tài khoản trực tiếp</h2></div>
+  <div class="forms">
+    <form method="post" action="{{ url_for('accounts.add') }}" class="stack">
+      <input type="hidden" name="csrf" value="{{ session.csrf }}">
+      <label>Tên hiển thị <input name="display_name" maxlength="100" required></label>
+      <label>Tên đăng nhập <input name="username" pattern="[a-z][a-z0-9_.\-]{2,31}" maxlength="32" autocomplete="off" required></label>
+      <label>Mật khẩu tạm <input type="password" name="password" minlength="12" maxlength="128" autocomplete="new-password" required></label>
+      <label>Vai trò <select name="role" required>
+        <option value="manager">Quản lý dãy</option><option value="technician">Kỹ thuật viên</option><option value="tenant">Người thuê</option>
+      </select></label>
+      {% if not g.house_a_id %}<label>Dãy phụ trách (quản lý và kỹ thuật viên) <select name="house_id">
+        <option value="">Chọn dãy trọ</option>{% for house in houses %}<option value="{{ house.id }}">{{ house.name }}</option>{% endfor %}
+      </select></label>{% endif %}
+      <label>Hồ sơ đang thuê (người thuê) <select name="stay_id">
+        <option value="">Chọn người đang thuê</option>{% for stay in available_stays %}<option value="{{ stay.id }}">{{ stay.name }} · Phòng {{ stay.code }}{% if not g.house_a_id %} · {{ stay.property }}{% endif %}</option>{% endfor %}
+      </select></label>
+      <button>Tạo tài khoản</button>
+    </form>
+  </div>
+</section>
+<section class="panel">
+  <div class="heading"><h2>Tài khoản đã cấp</h2></div>
+  {% if accounts %}<div class="table-wrap"><table>
+    <thead><tr><th scope="col">Tên</th><th scope="col">Vai trò</th><th scope="col">Phạm vi</th><th scope="col">Trạng thái</th><th scope="col">Thao tác</th></tr></thead>
+    <tbody>{% for account in accounts %}<tr>
+      <td>{{ account.display_name }}<small>{{ account.username }}</small></td><td>{{ role_labels[account.role] }}</td>
+      <td>{{ account.property }}{% if account.room %}<small>{{ account.room }} · {{ account.resident }}</small>{% endif %}</td>
+      <td>{{ 'Đang hoạt động' if account.enabled else 'Đã khóa' }}{% if account.ended_at %}<small>Đã trả phòng</small>{% endif %}</td>
+      <td>{% if account.enabled %}<details><summary>Quản lý</summary>
+        <form method="post" action="{{ url_for('accounts.change_scope', account_id=account.id) }}" class="stack compact">
+          <input type="hidden" name="csrf" value="{{ session.csrf }}">
+          <label>Tên hiển thị <input name="display_name" value="{{ account.display_name }}" maxlength="100" required></label>
+          <label>Vai trò <select name="role">
+            {% for role in ('manager', 'technician','tenant') %}<option value="{{ role }}"{% if account.role == role %} selected{% endif %}>{{ role_labels[role] }}</option>{% endfor %}
+          </select></label>
+          {% if not g.house_a_id %}<label>Dãy phụ trách (quản lý và kỹ thuật viên) <select name="house_id"><option value="">Chọn dãy</option>
+            {% for house in houses %}<option value="{{ house.id }}"{% if account.house_id == house.id %} selected{% endif %}>{{ house.name }}</option>{% endfor %}
+          </select></label>{% endif %}
+          <label>Hồ sơ đang thuê (người thuê) <select name="stay_id"><option value="">Chọn người đang thuê</option>
+            {% for stay in stays if stay in available_stays or account.stay_id == stay.id %}<option value="{{ stay.id }}"{% if account.stay_id == stay.id %} selected{% endif %}>{{ stay.name }} · Phòng {{ stay.code }}{% if not g.house_a_id %} · {{ stay.property }}{% endif %}</option>{% endfor %}
+          </select></label>
+          <label>Mật khẩu mới khi đổi quyền <input type="password" name="password" minlength="12" maxlength="128" autocomplete="new-password" required></label>
+          <button class="quiet">Cập nhật quyền</button>
+        </form>
+        <form method="post" action="{{ url_for('accounts.reset_password', account_id=account.id) }}" class="stack compact">
+          <input type="hidden" name="csrf" value="{{ session.csrf }}">
+          <label>Mật khẩu mới <input type="password" name="password" minlength="12" maxlength="128" autocomplete="new-password" required></label>
+          <button class="quiet">Đặt lại mật khẩu</button>
+        </form>
+        <form method="post" action="{{ url_for('accounts.disable', account_id=account.id) }}" class="compact">
+          <input type="hidden" name="csrf" value="{{ session.csrf }}"><button class="quiet">Khóa tài khoản</button>
+        </form>
+      </details>{% else %}<details><summary>Mở khóa</summary>
+        <form method="post" action="{{ url_for('accounts.enable', account_id=account.id) }}" class="stack compact">
+          <input type="hidden" name="csrf" value="{{ session.csrf }}">
+          <label>Mật khẩu mới <input type="password" name="password" minlength="12" maxlength="128" autocomplete="new-password" required></label>
+          <button class="quiet">Mở khóa tài khoản</button>
+        </form>
+      </details>{% endif %}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>{% else %}<p class="muted empty">Chưa cấp tài khoản cho quản lý, kỹ thuật viên hoặc người thuê.</p>{% endif %}
+</section>
+{% endblock %}

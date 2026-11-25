@@ -1,0 +1,7 @@
+<section class="panel" id="intercom-incoming">
+  <div class="heading"><h2>Chuông đến</h2></div>
+  <div data-intercom-incoming="{{ url_for('intercom_incoming') }}" aria-live="polite">
+    {%- include "intercom_incoming.html" -%}
+  </div>
+</section>
+<script defer src="{{ url_for('static', filename='intercom_incoming.js') }}"></script>
